@@ -6,7 +6,6 @@ import (
 	"github.com/alexperezortuno/go-zmq/commons"
 	"github.com/alexperezortuno/go-zmq/commons/structs"
 	zmq "github.com/pebbe/zmq4"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -14,7 +13,6 @@ import (
 )
 
 var logger = commons.GetLogger()
-var nameSpace = "worker"
 
 func workers(wg *sync.WaitGroup, ctx *zmq.Context, worker int) {
 	defer wg.Done()
@@ -22,24 +20,24 @@ func workers(wg *sync.WaitGroup, ctx *zmq.Context, worker int) {
 	receiver, err := ctx.NewSocket(zmq.PULL)
 
 	if err != nil {
-		logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Error(err)
+		logger.Error(err)
 	}
 
 	err = receiver.Connect("tcp://localhost:5555")
 
 	if err != nil {
-		logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Error(err)
+		logger.Error(err)
 	}
 
 	//  Socket to send messages to task sink
 	sender, err := ctx.NewSocket(zmq.PUSH)
 	if err != nil {
-		logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Error(err)
+		logger.Error(err)
 	}
 
 	err = sender.Connect("tcp://localhost:5557")
 	if err != nil {
-		logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Error(err)
+		logger.Error(err)
 	}
 
 	// Socket to send messages to task sink
@@ -52,38 +50,38 @@ func workers(wg *sync.WaitGroup, ctx *zmq.Context, worker int) {
 	}(subscriber)
 
 	if err != nil {
-		logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Error(err)
+		logger.Error(err)
 	}
 
 	err = subscriber.Connect("tcp://localhost:5558")
 	if err != nil {
-		logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Error(err)
+		logger.Error(err)
 	}
 
 	err = subscriber.SetSubscribe("")
 	if err != nil {
-		logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Error(err)
+		logger.Error(err)
 	}
 
 	for {
 		var r structs.Request
 		msg, err := receiver.Recv(0)
 		if err != nil {
-			logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Error(err)
+			logger.Error(err)
 		}
 
 		err = json.Unmarshal([]byte(msg), &r)
 		if err != nil {
-			logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Error(err)
+			logger.Error(err)
 		}
 
 		data, err := makeRequest(r.Id)
 
 		if err != nil {
-			logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Error(err)
+			logger.Error(err)
 		}
 
-		logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Debug("Received ", data.Name)
+		logger.Debug("Received ", data.Name)
 
 		taskCompleted := fmt.Sprintf("Worker %d completed task", worker)
 
@@ -100,11 +98,11 @@ func Start(conf *structs.Flags) {
 	wg.Add(conf.NumOfWorker)
 
 	if err != nil {
-		logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Error(err)
+		logger.Error(err)
 	}
 
 	for i := 0; i < conf.NumOfWorker; i++ {
-		logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Debug("Starting worker ", i)
+		logger.Debug("Starting worker ", i)
 		go workers(&wg, context, i)
 	}
 	wg.Wait()
@@ -114,20 +112,20 @@ func makeRequest(paramId int) (structs.SWPeople, error) {
 	res, err := http.Get("https://swapi.dev/api/people/" + strconv.Itoa(paramId) + "/")
 
 	if err != nil {
-		logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Error(err)
+		logger.Error(err)
 	}
 
 	responseData, err := ioutil.ReadAll(res.Body)
 
 	if err != nil {
-		logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Error(err)
+		logger.Error(err)
 	}
 
 	var responseObject structs.SWPeople
 	err = json.Unmarshal(responseData, &responseObject)
 
 	if err != nil {
-		logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Error(err)
+		logger.Error(err)
 	}
 
 	return responseObject, nil

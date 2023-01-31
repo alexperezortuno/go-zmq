@@ -52,7 +52,7 @@ func main() {
 
 	err := cmd.ParseAndRun(os.Args)
 	if err != nil {
-		logger.WithField("line", 48).Error(err)
+		logger.Error(err)
 		os.Exit(1)
 	}
 

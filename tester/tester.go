@@ -5,34 +5,33 @@ import (
 	"github.com/alexperezortuno/go-zmq/commons"
 	"github.com/alexperezortuno/go-zmq/commons/structs"
 	"github.com/pebbe/zmq4"
-	"github.com/sirupsen/logrus"
 	"math/rand"
 )
 
 func Start() {
 	context, err := zmq4.NewContext()
 	var logger = commons.GetLogger()
-	var nameSpace = "tester"
+
 	defer func(context *zmq4.Context) {
 		err := context.Term()
 		if err != nil {
-			logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Fatal(err)
+			logger.Fatal(err)
 		}
 	}(context)
 
 	if err != nil {
-		logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Error(err)
+		logger.Error(err)
 	}
 
 	sender, err := context.NewSocket(zmq4.PUSH)
 	if err != nil {
-		logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Fatal(err)
+		logger.Fatal(err)
 	}
 
 	defer func(sender *zmq4.Socket) {
 		err := sender.Close()
 		if err != nil {
-			logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Error(err)
+			logger.Error(err)
 		}
 	}(sender)
 
@@ -47,7 +46,7 @@ func Start() {
 		b, err := json.Marshal(m)
 
 		if err != nil {
-			logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Error(err)
+			logger.Error(err)
 		}
 
 		_, err = sender.SendMessage(b)
@@ -55,6 +54,6 @@ func Start() {
 			return
 		}
 
-		logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Infof("Send message %d\n", i)
+		logger.Infof("Send message %d\n", i)
 	}
 }
