@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/alexperezortuno/go-zmq/commons"
 	"github.com/alexperezortuno/go-zmq/commons/structs"
+	"github.com/alexperezortuno/go-zmq/sink"
 	"github.com/alexperezortuno/go-zmq/tester"
 	"github.com/alexperezortuno/go-zmq/worker"
 	"github.com/pteich/configstruct"
@@ -15,15 +16,17 @@ func main() {
 	var logger = commons.GetLogger()
 
 	conf := structs.Flags{
-		Tester: false,
-		Worker: false,
+		Tester:      false,
+		Worker:      false,
+		Sink:        false,
+		NumOfWorker: 1,
 	}
 
-	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	ctx := make(chan os.Signal)
+	signal.Notify(ctx, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
-		<-c
+		<-ctx
 		os.Exit(0)
 	}()
 
@@ -37,7 +40,11 @@ func main() {
 			}
 
 			if conf.Worker {
-				worker.Start()
+				worker.Start(cfg.(*structs.Flags))
+			}
+
+			if conf.Sink {
+				sink.Start()
 			}
 			return nil
 		},
@@ -50,5 +57,4 @@ func main() {
 	}
 
 	os.Exit(0)
-
 }

@@ -21,9 +21,10 @@ func GetLogger() *logrus.Logger {
 	standardLogger.SetLevel(logrus.DebugLevel)
 	standardLogger.SetFormatter(&easy.Formatter{
 		TimestampFormat: "2006-01-02 15:04:05",
-		LogFormat:       "%time% [%lvl%] line:%line% - %msg%",
+		LogFormat:       "%time% [%lvl%] %msg%\n",
 	})
 	standardLogger.SetOutput(io.MultiWriter(f, os.Stdout))
+	standardLogger.SetReportCaller(true)
 
 	return standardLogger
 }

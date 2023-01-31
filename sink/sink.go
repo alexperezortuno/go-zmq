@@ -1,18 +1,16 @@
-package tester
+package sink
 
 import (
-	"encoding/json"
 	"github.com/alexperezortuno/go-zmq/commons"
-	"github.com/alexperezortuno/go-zmq/commons/structs"
 	"github.com/pebbe/zmq4"
 	"github.com/sirupsen/logrus"
-	"math/rand"
 )
 
 func Start() {
 	context, err := zmq4.NewContext()
 	var logger = commons.GetLogger()
-	var nameSpace = "tester"
+	var nameSpace = "sink"
+
 	defer func(context *zmq4.Context) {
 		err := context.Term()
 		if err != nil {
@@ -24,7 +22,7 @@ func Start() {
 		logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Error(err)
 	}
 
-	sender, err := context.NewSocket(zmq4.PUSH)
+	receiver, err := context.NewSocket(zmq4.PULL)
 	if err != nil {
 		logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Fatal(err)
 	}
@@ -34,27 +32,34 @@ func Start() {
 		if err != nil {
 			logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Error(err)
 		}
-	}(sender)
+	}(receiver)
 
-	err = sender.Bind("tcp://*:5555")
+	err = receiver.Bind("tcp://*:5557")
+	if err != nil {
+		logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Error(err)
+	}
+
+	pub, err := context.NewSocket(zmq4.PUB)
+	if err != nil {
+		logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Fatal(err)
+	}
+
+	err = pub.Bind("tcp://*:5558")
 	if err != nil {
 		return
 	}
 
-	for i := 0; i < 20; i++ {
-		m := structs.Request{Id: rand.Intn(100)}
+	_, err = pub.Send("Hello", 0)
+	if err != nil {
+		return
+	}
 
-		b, err := json.Marshal(m)
-
+	for {
+		msg, err := receiver.RecvMessageBytes(0)
 		if err != nil {
 			logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Error(err)
 		}
 
-		_, err = sender.SendMessage(b)
-		if err != nil {
-			return
-		}
-
-		logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Infof("Send message %d\n", i)
+		logger.WithFields(logrus.Fields{"nameSpace": nameSpace}).Debugf("Received message: %s", msg)
 	}
 }

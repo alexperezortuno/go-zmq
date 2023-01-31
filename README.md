@@ -32,3 +32,8 @@ Worker
 ```shell
 go run main.go -w
 ```
+
+
+### Parallel Pipeline with Kill Signaling
+
+![Parallel Pipeline with Kill Signaling](/documentation/assets/images/fig19.png "Parallel Pipeline with Kill Signaling")
